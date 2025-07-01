@@ -1,0 +1,14 @@
+# Environment Variables - Contains Secrets!
+.env
+
+# WordPress uploads
+uploads.ini
+
+# Backup files
+backups/
+
+# MySQL initialization scripts (if they contain secrets)
+mysql-init/
+
+# Logs
+*.log

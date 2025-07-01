@@ -1,4 +1,4 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   # WordPress Application
@@ -88,3 +88,4 @@ volumes:
 networks:
   wordpress-network:
     driver: bridge
+

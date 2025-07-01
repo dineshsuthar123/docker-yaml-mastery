@@ -1,4 +1,4 @@
-version: "3.8"
+﻿version: "3.8"
 
 # Docker Compose Networking Examples
 
@@ -76,3 +76,4 @@ networks:
   external-net:
     external: true
     name: my-existing-network
+

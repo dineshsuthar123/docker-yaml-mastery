@@ -1,4 +1,4 @@
-version: "3.8"
+﻿version: "3.8"
 
 # Health Check Examples
 
@@ -125,3 +125,4 @@ services:
     command: tail -f /dev/null
     healthcheck:
       disable: true
+

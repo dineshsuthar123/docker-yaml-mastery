@@ -1,4 +1,4 @@
-version: "3.8"
+﻿version: "3.8"
 
 # Docker Compose Volume Examples
 
@@ -76,3 +76,4 @@ volumes:
   # Shared volume between services
   shared_data:
     driver: local
+

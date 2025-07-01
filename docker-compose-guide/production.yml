@@ -1,4 +1,4 @@
-version: "3.8"
+﻿version: "3.8"
 
 # Production Configuration Example
 
@@ -197,3 +197,4 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: prod-bridge
+

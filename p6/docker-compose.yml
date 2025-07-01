@@ -1,9 +1,9 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   # Django Web Application
   web:
-    build: 
+    build:
       context: ./django-app
       dockerfile: Dockerfile
     container_name: django-web
@@ -32,7 +32,7 @@ services:
 
   # Celery Worker
   celery-worker:
-    build: 
+    build:
       context: ./django-app
       dockerfile: Dockerfile
     container_name: celery-worker
@@ -51,7 +51,7 @@ services:
 
   # Celery Beat (Scheduler)
   celery-beat:
-    build: 
+    build:
       context: ./django-app
       dockerfile: Dockerfile
     container_name: celery-beat
@@ -112,7 +112,7 @@ services:
 
   # Monitoring with Flower (Celery monitoring)
   flower:
-    build: 
+    build:
       context: ./django-app
       dockerfile: Dockerfile
     container_name: flower
@@ -135,3 +135,4 @@ volumes:
 networks:
   django-network:
     driver: bridge
+

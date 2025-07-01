@@ -1,6 +1,4 @@
-version: '3.8'
-
-services:
+﻿services:
   # Traefik Reverse Proxy & Load Balancer
   traefik:
     image: traefik:v2.10
@@ -81,11 +79,11 @@ services:
     container_name: app-instance-1
     environment:
       - INSTANCE_ID=1
-      - DB_URL=postgresql://app:app@postgres:5432/appdb
-      - REDIS_URL=redis://redis:6379
+      - DB_URL=postgresql://app:app@postgres-master:5432/appdb
+      - REDIS_URL=redis://redis-master:6379
     depends_on:
-      - postgres
-      - redis
+      - postgres-master
+      - redis-master
     networks:
       - internal
 
@@ -94,11 +92,11 @@ services:
     container_name: app-instance-2
     environment:
       - INSTANCE_ID=2
-      - DB_URL=postgresql://app:app@postgres:5432/appdb
-      - REDIS_URL=redis://redis:6379
+      - DB_URL=postgresql://app:app@postgres-master:5432/appdb
+      - REDIS_URL=redis://redis-master:6379
     depends_on:
-      - postgres
-      - redis
+      - postgres-master
+      - redis-master
     networks:
       - internal
 
@@ -107,11 +105,11 @@ services:
     container_name: app-instance-3
     environment:
       - INSTANCE_ID=3
-      - DB_URL=postgresql://app:app@postgres:5432/appdb
-      - REDIS_URL=redis://redis:6379
+      - DB_URL=postgresql://app:app@postgres-master:5432/appdb
+      - REDIS_URL=redis://redis-master:6379
     depends_on:
-      - postgres
-      - redis
+      - postgres-master
+      - redis-master
     networks:
       - internal
 
@@ -227,3 +225,4 @@ networks:
     external: true
   internal:
     driver: bridge
+

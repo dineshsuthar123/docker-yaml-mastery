@@ -1,4 +1,4 @@
-version: "3.8"
+﻿version: "3.8"
 
 # Service Dependencies Examples
 
@@ -94,3 +94,4 @@ services:
       - worker
     ports:
       - "9090:9090"
+

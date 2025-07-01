@@ -1,4 +1,4 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   # MinIO (S3-compatible object storage)
@@ -185,3 +185,4 @@ volumes:
 networks:
   storage-network:
     driver: bridge
+

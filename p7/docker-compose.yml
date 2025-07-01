@@ -1,4 +1,4 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   # RabbitMQ Message Broker
@@ -163,3 +163,4 @@ volumes:
 networks:
   microservices:
     driver: bridge
+

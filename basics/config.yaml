@@ -1,4 +1,4 @@
-# Docker Compose Configuration Examples
+﻿# Docker Compose Configuration Examples
 
 # Environment-specific configuration
 development:
@@ -41,3 +41,4 @@ service_template: &service_defaults
   environment:
     NODE_ENV: ${NODE_ENV:-development}
     LOG_LEVEL: ${LOG_LEVEL:-info}
+

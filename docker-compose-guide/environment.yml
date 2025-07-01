@@ -1,4 +1,4 @@
-version: "3.8"
+﻿version: "3.8"
 
 # Environment Variable Examples
 
@@ -83,3 +83,4 @@ secrets:
   api_key:
     external: true
     name: my_api_key
+

@@ -1,4 +1,4 @@
-# Advanced YAML Features
+﻿# Advanced YAML Features
 
 # Complex data structures
 company:
@@ -47,3 +47,4 @@ pi: !!float 3.14159
 # Null values
 database_password: ~
 cache_ttl: null
+

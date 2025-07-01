@@ -1,11 +1,11 @@
-version: '3.8'
+﻿version: '3.8'
 
 # Beginner version with guided comments and simplified configuration
 
 services:
   # Django Web Application - Beginner Setup
   web:
-    build: 
+    build:
       context: ./django-app
       dockerfile: Dockerfile
     container_name: django-web-beginner
@@ -42,3 +42,4 @@ networks:
 # - Debug mode enabled for learning
 # - Includes database browser for exploration
 # - Single container focus for understanding basics
+

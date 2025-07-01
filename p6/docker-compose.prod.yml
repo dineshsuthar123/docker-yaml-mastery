@@ -1,11 +1,9 @@
-version: '3.8'
-
-# Production version with security, monitoring, and performance optimizations
+﻿# Production version with security, monitoring, and performance optimizations
 
 services:
   # Django Web Application - Production Ready
   web:
-    build: 
+    build:
       context: ./django-app
       dockerfile: Dockerfile.prod  # Production Dockerfile
     container_name: django-web-prod
@@ -55,10 +53,9 @@ services:
 
   # Celery Worker - Production Configuration
   celery-worker:
-    build: 
+    build:
       context: ./django-app
       dockerfile: Dockerfile.prod
-    container_name: celery-worker-prod
     restart: unless-stopped
     volumes:
       - media_volume:/app/media
@@ -124,7 +121,7 @@ services:
     container_name: redis-prod
     restart: unless-stopped
     command: >
-      redis-server 
+      redis-server
       --requirepass ${REDIS_PASSWORD}
       --appendonly yes
       --appendfsync everysec
@@ -183,7 +180,6 @@ services:
   # Monitoring - Prometheus
   prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus
     restart: unless-stopped
     ports:
       - "9090:9090"
@@ -202,7 +198,6 @@ services:
   # Monitoring - Grafana
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
     restart: unless-stopped
     ports:
       - "3001:3000"
@@ -220,7 +215,6 @@ services:
   # Log Aggregation - Fluentd
   fluentd:
     build: ./fluentd
-    container_name: fluentd
     restart: unless-stopped
     volumes:
       - ./fluentd/conf:/fluentd/etc:ro
@@ -232,7 +226,6 @@ services:
   # Backup Service
   backup:
     image: postgres:15-alpine
-    container_name: backup-service
     restart: "no"
     volumes:
       - postgres_data:/var/lib/postgresql/data:ro
@@ -284,3 +277,4 @@ networks:
 # 4. Configure backup retention and monitoring alerts
 # 5. Implement log rotation and monitoring
 # 6. Use secrets management for sensitive data
+

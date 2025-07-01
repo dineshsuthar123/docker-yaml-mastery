@@ -1,4 +1,4 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   # Kubernetes Dashboard
@@ -211,3 +211,4 @@ volumes:
 networks:
   k8s-dev:
     driver: bridge
+

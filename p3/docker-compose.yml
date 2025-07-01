@@ -1,4 +1,4 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   # Nginx Reverse Proxy
@@ -182,3 +182,4 @@ networks:
     driver: bridge
   monitoring:
     driver: bridge
+

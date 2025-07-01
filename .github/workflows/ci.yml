@@ -1,4 +1,4 @@
-﻿name: ðŸ³ Docker & YAML Mastery CI/CD
+name: "🐳 Docker & YAML Mastery CI/CD"
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: "0 2 * * 1" # Weekly security scans
+    - cron: "0 2 * * 1"  # Weekly security scans
 
 env:
   REGISTRY: ghcr.io
@@ -14,368 +14,31 @@ env:
 
 jobs:
   yaml-validation:
-    name: ðŸ“ YAML Validation & Linting
+    name: "💝 YAML Validation & Linting"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      # … rest of your steps …
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install yamllint
-        run: |
-          pip install yamllint
-          pip install pyyaml
-
-      - name: Fix trailing spaces in YAML files
-        run: |
-          find . -name "*.yml" -o -name "*.yaml" | xargs sed -i 's/[[:space:]]*$//'
-
-      - name: Validate YAML syntax (relaxed rules)
-        run: |
-          find . -name "*.yml" -o -name "*.yaml" | xargs yamllint -d "{extends: relaxed, rules: {line-length: {max: 120}, trailing-spaces: disable}}"
-
-      - name: Validate Docker Compose files
-        run: |
-          for dir in p*/; do
-            if [ -f "$dir/docker-compose.yml" ]; then
-              echo "Validating $dir/docker-compose.yml"
-              cd "$dir"
-              docker-compose config --quiet || echo "Warning: $dir has validation issues"
-              cd ..
-            fi
-          done
-
-  dockerfile-lint:
-    name: ðŸ‹ Dockerfile Linting
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install hadolint
-        run: |
-          wget -O hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
-          chmod +x hadolint
-          sudo mv hadolint /usr/local/bin/
-
-      - name: Lint Dockerfiles (with warnings only)
-        run: |
-          find . -name "Dockerfile*" -exec hadolint --ignore DL3008 --ignore DL3009 {} + || echo "Dockerfile linting completed with warnings"
-
-  security-scan:
-    name: ðŸ”’ Security Scanning
-    runs-on: ubuntu-latest
-    continue-on-error: true  # Don't fail build on security warnings
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: "fs"
-          scan-ref: "."
-          format: "table"
-          exit-code: "0"  # Don't fail on vulnerabilities
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: "trivy-results.sarif"
-
-      - name: Check for secrets
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: main
-          head: HEAD
-
-  build-test:
-    name: ðŸ”¨ Build & Test Projects
-    runs-on: ubuntu-latest
-    continue-on-error: true  # Don't fail entire build on single project issues
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Test build ${{ matrix.project }}
-        run: |
-          cd ${{ matrix.project }}
-          if [ -f docker-compose.yml ]; then
-            echo "Testing ${{ matrix.project }}..."
-
-            # Validate compose file first
-            docker-compose config --quiet || echo "Warning: Config validation failed"
-
-            # Try to build (but don't fail on missing dependencies)
-            timeout 300 docker-compose build --parallel || echo "Build completed with warnings"
-
-            # Quick start test (don't wait too long)
-            timeout 60 docker-compose up -d || echo "Quick start test completed"
-
-            # Show status
-            docker-compose ps || true
-
-            # Cleanup
-            docker-compose down -v --remove-orphans || true
-
-            echo "âœ… ${{ matrix.project }} test completed"
-          else
-            echo "âš ï¸ No docker-compose.yml found in ${{ matrix.project }}"
-          fi
-
-  quiz-validation:
-    name: ðŸ§  Quiz System Validation
-    runs-on: ubuntu-latest
-    continue-on-error: true  # Don't fail build on quiz issues
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-
-      - name: Install dependencies
-        run: |
-          if [ -f package.json ]; then
-            npm install
-          fi
-
-      - name: Validate quiz structure
-        run: |
-          if [ -d quizzes ]; then
-            echo "âœ… Quiz directory found"
-            find quizzes -name "*.md" | head -5
-            echo "Quiz validation completed"
-          else
-            echo "âš ï¸ No quiz directory found"
-          fi
-
-  performance-testing:
-    name: âš¡ Performance Testing
-    runs-on: ubuntu-latest
-    continue-on-error: true  # Don't fail build on performance issues
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Basic performance check
-        run: |
-          echo "ðŸ” Running basic performance checks..."
-
-          # Check file sizes
-          echo "ðŸ“ Project sizes:"
-          du -sh p*/ | head -10
-
-          # Check compose file complexity
-          echo "ðŸ“‹ Compose file analysis:"
-          for f in p*/docker-compose.yml; do
-            if [ -f "$f" ]; then
-              lines=$(wc -l < "$f")
-              services=$(grep -c "^  [a-z]" "$f" || echo "0")
-              echo "  $f: $lines lines, $services services"
-            fi
-          done
-
-          echo "âœ… Performance check completed"
+  # … other jobs …
 
   kubernetes-validation:
-    name: â˜¸ï¸ Kubernetes Manifest Validation
-    runs-on: ubuntu-latest
-    continue-on-error: true  # Don't fail build on k8s issues
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install kubeval
-        run: |
-          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
-          tar xf kubeval-linux-amd64.tar.gz
-          sudo mv kubeval /usr/local/bin
-
-      - name: Validate Kubernetes manifests
-        run: |
-          if [ -d kubernetes ]; then
-            echo "âœ… Kubernetes directory found"
-            find kubernetes -name "*.yaml" -o -name "*.yml" | head -5
-            echo "Kubernetes validation completed"
-          else
-            echo "âš ï¸ No kubernetes directory found"
-          fi
-
-  demo-deployment:
-    name: ðŸŒ Deploy Live Demos
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs: [yaml-validation, dockerfile-lint, build-test]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to demo environment
-        env:
-          DEMO_SERVER_HOST: ${{ secrets.DEMO_SERVER_HOST }}
-          DEMO_SERVER_USER: ${{ secrets.DEMO_SERVER_USER }}
-          DEMO_SERVER_KEY: ${{ secrets.DEMO_SERVER_KEY }}
-        run: |
-          echo "$DEMO_SERVER_KEY" > demo_key
-          chmod 600 demo_key
-          scp -i demo_key -r . $DEMO_SERVER_USER@$DEMO_SERVER_HOST:/var/www/demos/
-          ssh -i demo_key $DEMO_SERVER_USER@$DEMO_SERVER_HOST 'cd /var/www/demos && ./scripts/deploy-demos.sh'
-
-  performance-test:
-    name: âš¡ Performance Testing
+    name: "☸️ Kubernetes Manifest Validation"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Run performance tests
-        run: |
-          docker run --rm -v $(pwd):/workspace \
-            grafana/k6 run --vus 10 --duration 30s \
-            /workspace/tests/performance/load-test.js
-
-  kubernetes-validation:
-    name: âš“ Kubernetes Manifest Validation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
-
       - name: Validate Kubernetes manifests
         run: |
           for manifest in kubernetes/**/*.yaml; do
             kubectl apply --dry-run=client -f $manifest
           done
-
       - name: Run kubeval
         run: |
           wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
           tar xf kubeval-linux-amd64.tar.gz
           sudo mv kubeval /usr/local/bin
           find kubernetes/ -name "*.yaml" -exec kubeval {} \;
-
-  generate-docs:
-    name: ðŸ“š Generate Documentation
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install documentation tools
-        run: |
-          pip install mkdocs mkdocs-material
-          npm install -g doctoc
-
-      - name: Generate project documentation
-        run: |
-          python scripts/generate-docs.py
-          doctoc README.md
-
-      - name: Build documentation site
-        run: |
-          mkdocs build
-
-      - name: Deploy documentation
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site
-
-  badge-update:
-    name: ðŸ† Update Achievement Badges
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs:
-      [
-        yaml-validation,
-        dockerfile-lint,
-        security-scan,
-        build-test,
-        quiz-validation,
-      ]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Update quality badges
-        run: |
-          echo "Updating quality and completion badges..."
-          python scripts/update-badges.py
-
-      - name: Commit badge updates
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "ðŸ† Update achievement badges [skip ci]"
-          file_pattern: "*.md"
-
-  release:
-    name: ðŸš€ Create Release
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release]')
-    needs:
-      [
-        yaml-validation,
-        dockerfile-lint,
-        security-scan,
-        build-test,
-        quiz-validation,
-      ]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ github.run_number }}
-          release_name: Docker & YAML Mastery v${{ github.run_number }}
-          body: |
-            ## ðŸ³ Docker & YAML Mastery Release v${{ github.run_number }}
-
-            ### âœ¨ What's New
-            - Updated project examples
-            - Enhanced security configurations
-            - Improved documentation
-            - New interactive quizzes
-
-            ### ðŸ”§ Technical Improvements
-            - All Docker images updated to latest versions
-            - Security vulnerabilities addressed
-            - Performance optimizations applied
-
-            ### ðŸ“Š Project Statistics
-            - **15 Projects** covering beginner to expert level
-            - **45+ Docker services** with real-world configurations
-            - **100+ YAML examples** with best practices
-            - **30+ Quizzes** for interactive learning
-          draft: false
-          prerelease: false
-

@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  # Django Web Application
+  web:
+    build: 
+      context: ./django-app
+      dockerfile: Dockerfile
+    container_name: django-web
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./django-app:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgresql://postgres:password@db:5432/django_db
+      - REDIS_URL=redis://redis:6379
+      - CELERY_BROKER_URL=redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    networks:
+      - django-network
+
+  # Celery Worker
+  celery-worker:
+    build: 
+      context: ./django-app
+      dockerfile: Dockerfile
+    container_name: celery-worker
+    volumes:
+      - ./django-app:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/django_db
+      - REDIS_URL=redis://redis:6379
+      - CELERY_BROKER_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    command: celery -A myproject worker --loglevel=info
+    networks:
+      - django-network
+
+  # Celery Beat (Scheduler)
+  celery-beat:
+    build: 
+      context: ./django-app
+      dockerfile: Dockerfile
+    container_name: celery-beat
+    volumes:
+      - ./django-app:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/django_db
+      - REDIS_URL=redis://redis:6379
+      - CELERY_BROKER_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    command: celery -A myproject beat --loglevel=info
+    networks:
+      - django-network
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: django_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - django-network
+
+  # Redis (Cache & Message Broker)
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - django-network
+
+  # Nginx (Production)
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_volume:/staticfiles:ro
+      - media_volume:/media:ro
+    depends_on:
+      - web
+    networks:
+      - django-network
+
+  # Monitoring with Flower (Celery monitoring)
+  flower:
+    build: 
+      context: ./django-app
+      dockerfile: Dockerfile
+    container_name: flower
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379
+    depends_on:
+      - redis
+    command: celery -A myproject flower
+    networks:
+      - django-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_volume:
+  media_volume:
+
+networks:
+  django-network:
+    driver: bridge

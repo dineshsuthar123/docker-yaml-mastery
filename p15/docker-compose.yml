@@ -1,0 +1,213 @@
+version: '3.8'
+
+services:
+  # Kubernetes Dashboard
+  kubernetes-dashboard:
+    image: kubernetesui/dashboard:latest
+    container_name: k8s-dashboard
+    ports:
+      - "8443:8443"
+    command:
+      - --auto-generate-certificates
+      - --namespace=kubernetes-dashboard
+    networks:
+      - k8s-dev
+
+  # Docker-in-Docker for building images
+  docker-dind:
+    image: docker:dind
+    container_name: docker-dind
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+    volumes:
+      - docker-certs-ca:/certs/ca
+      - docker-certs-client:/certs/client
+      - ./builds:/builds
+    networks:
+      - k8s-dev
+
+  # Build Agent
+  build-agent:
+    image: docker:latest
+    container_name: build-agent
+    environment:
+      DOCKER_HOST: tcp://docker-dind:2376
+      DOCKER_CERT_PATH: /certs/client
+      DOCKER_TLS_VERIFY: 1
+    volumes:
+      - docker-certs-client:/certs/client:ro
+      - ./builds:/builds
+      - ./scripts:/scripts
+    command: tail -f /dev/null
+    depends_on:
+      - docker-dind
+    networks:
+      - k8s-dev
+
+  # Helm Chart Repository
+  chartmuseum:
+    image: ghcr.io/helm/chartmuseum:latest
+    container_name: chartmuseum
+    ports:
+      - "8081:8080"
+    environment:
+      DEBUG: 1
+      STORAGE: local
+      STORAGE_LOCAL_ROOTDIR: /charts
+    volumes:
+      - charts_data:/charts
+    networks:
+      - k8s-dev
+
+  # GitLab Runner for CI/CD
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gitlab_runner_config:/etc/gitlab-runner
+    networks:
+      - k8s-dev
+
+  # Istio Service Mesh components (development setup)
+  istio-pilot:
+    image: istio/pilot:latest
+    container_name: istio-pilot
+    ports:
+      - "15010:15010"
+      - "15011:15011"
+    environment:
+      PILOT_ENABLE_WORKLOAD_ENTRY_AUTOREGISTRATION: true
+    networks:
+      - k8s-dev
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger-k8s
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+    networks:
+      - k8s-dev
+
+  # Kiali for service mesh observability
+  kiali:
+    image: quay.io/kiali/kiali:latest
+    container_name: kiali
+    ports:
+      - "20001:20001"
+    environment:
+      KIALI_CONFIG_AUTH_STRATEGY: anonymous
+    networks:
+      - k8s-dev
+
+  # ArgoCD for GitOps
+  argocd-server:
+    image: argoproj/argocd:latest
+    container_name: argocd-server
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    command:
+      - argocd-server
+      - --insecure
+    networks:
+      - k8s-dev
+
+  # Tekton Pipelines Controller (simplified)
+  tekton-controller:
+    image: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/controller:latest
+    container_name: tekton-controller
+    environment:
+      SYSTEM_NAMESPACE: tekton-pipelines
+    networks:
+      - k8s-dev
+
+  # Kubernetes Event Exporter
+  event-exporter:
+    image: opsgenie/kubernetes-event-exporter:latest
+    container_name: k8s-event-exporter
+    volumes:
+      - ./event-exporter-config.yaml:/etc/kubernetes-event-exporter/config.yaml
+    networks:
+      - k8s-dev
+
+  # Kubernetes Resource Recommender (VPA)
+  vpa-recommender:
+    image: k8s.gcr.io/autoscaling/vpa-recommender:latest
+    container_name: vpa-recommender
+    networks:
+      - k8s-dev
+
+  # KEDA (Kubernetes Event Driven Autoscaling)
+  keda-operator:
+    image: ghcr.io/kedacore/keda:latest
+    container_name: keda-operator
+    networks:
+      - k8s-dev
+
+  # Local Container Registry with Harbor
+  harbor-core:
+    image: goharbor/harbor-core:latest
+    container_name: harbor-core
+    ports:
+      - "80:8080"
+    environment:
+      CORE_SECRET: harbor-secret
+      JOBSERVICE_SECRET: harbor-jobservice-secret
+    depends_on:
+      - harbor-db
+      - redis
+    networks:
+      - k8s-dev
+
+  harbor-db:
+    image: goharbor/harbor-db:latest
+    container_name: harbor-db
+    environment:
+      POSTGRES_PASSWORD: root123
+      POSTGRES_DB: registry
+    volumes:
+      - harbor_db_data:/var/lib/postgresql/data
+    networks:
+      - k8s-dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: harbor-redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - k8s-dev
+
+  # Falco for runtime security
+  falco:
+    image: falcosecurity/falco:latest
+    container_name: falco
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /dev:/host/dev
+      - /proc:/host/proc:ro
+      - /boot:/host/boot:ro
+      - /lib/modules:/host/lib/modules:ro
+      - /usr:/host/usr:ro
+      - /etc:/host/etc:ro
+    networks:
+      - k8s-dev
+
+volumes:
+  docker-certs-ca:
+  docker-certs-client:
+  charts_data:
+  gitlab_runner_config:
+  harbor_db_data:
+  redis_data:
+
+networks:
+  k8s-dev:
+    driver: bridge

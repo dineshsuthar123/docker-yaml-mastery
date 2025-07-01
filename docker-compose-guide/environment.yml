@@ -1,0 +1,85 @@
+version: "3.8"
+
+# Environment Variable Examples
+
+services:
+  # Environment variables from env_file
+  web:
+    image: node:alpine
+    container_name: web
+    env_file:
+      - .env
+      - ./config/.env.production
+
+  # Inline environment variables
+  api:
+    image: node:alpine
+    container_name: api
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_NAME: myapp
+
+  # Environment variables with defaults
+  worker:
+    image: python:3.9
+    container_name: worker
+    environment:
+      WORKER_THREADS: ${WORKER_THREADS:-4}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      REDIS_URL: redis://cache:6379
+
+  # Database with environment variables
+  database:
+    image: postgres:15
+    container_name: database
+    environment:
+      POSTGRES_DB: ${DB_NAME:-myapp}
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+
+  # Service reading from host environment
+  monitoring:
+    image: prom/prometheus
+    container_name: prometheus
+    environment:
+      # Pass through host environment variables
+      - HOSTNAME
+      - USER
+    env_file:
+      - monitoring.env
+
+  # Service with secret management
+  secure-app:
+    image: node:alpine
+    container_name: secure-app
+    environment:
+      # Regular config
+      APP_NAME: MySecureApp
+      APP_PORT: 3000
+    secrets:
+      - db_password
+      - api_key
+    # Environment variables referencing secrets
+    # DB_PASSWORD_FILE: /run/secrets/db_password
+    # API_KEY_FILE: /run/secrets/api_key
+
+# Example .env file content:
+# NODE_ENV=development
+# LOG_LEVEL=debug
+# DB_HOST=localhost
+# DB_PORT=5432
+# DB_NAME=myapp_dev
+# DB_USER=dev_user
+# DB_PASSWORD=dev_password
+
+# Secret definitions
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  api_key:
+    external: true
+    name: my_api_key

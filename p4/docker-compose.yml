@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # WordPress Application
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress-app
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: mysql:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress_password
+      WORDPRESS_DB_NAME: wordpress_db
+    volumes:
+      - wordpress_data:/var/www/html
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - wordpress-network
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: wordpress-mysql
+    environment:
+      MYSQL_DATABASE: wordpress_db
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - wordpress-network
+
+  # phpMyAdmin for database management
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root_password
+    depends_on:
+      - mysql
+    restart: unless-stopped
+    networks:
+      - wordpress-network
+
+  # Backup service
+  backup:
+    image: alpine:latest
+    container_name: wordpress-backup
+    volumes:
+      - wordpress_data:/backup/wordpress:ro
+      - mysql_data:/backup/mysql:ro
+      - ./backups:/backups
+    command: |
+      sh -c "
+        while true; do
+          echo 'Creating backup...'
+          tar -czf /backups/wordpress-$$(date +%Y%m%d-%H%M%S).tar.gz -C /backup .
+          find /backups -name 'wordpress-*.tar.gz' -mtime +7 -delete
+          echo 'Backup completed. Waiting 24 hours...'
+          sleep 86400
+        done
+      "
+    restart: unless-stopped
+    networks:
+      - wordpress-network
+
+volumes:
+  wordpress_data:
+  mysql_data:
+
+networks:
+  wordpress-network:
+    driver: bridge

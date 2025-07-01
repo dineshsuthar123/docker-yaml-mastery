@@ -1,0 +1,187 @@
+version: '3.8'
+
+services:
+  # MinIO (S3-compatible object storage)
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - storage-network
+
+  # MongoDB with replica set
+  mongo1:
+    image: mongo:6
+    container_name: mongo1
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo1_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    command: mongod --replSet rs0 --bind_ip_all
+    networks:
+      - storage-network
+
+  mongo2:
+    image: mongo:6
+    container_name: mongo2
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo2_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    command: mongod --replSet rs0 --bind_ip_all
+    networks:
+      - storage-network
+
+  mongo3:
+    image: mongo:6
+    container_name: mongo3
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo3_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    command: mongod --replSet rs0 --bind_ip_all
+    networks:
+      - storage-network
+
+  # ClickHouse (Analytics Database)
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9009:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse-config.xml:/etc/clickhouse-server/config.xml
+    environment:
+      CLICKHOUSE_DB: analytics
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: password
+    networks:
+      - storage-network
+
+  # InfluxDB (Time Series Database)
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: password123
+      DOCKER_INFLUXDB_INIT_ORG: myorg
+      DOCKER_INFLUXDB_INIT_BUCKET: mybucket
+    networks:
+      - storage-network
+
+  # Neo4j (Graph Database)
+  neo4j:
+    image: neo4j:5
+    container_name: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    environment:
+      NEO4J_AUTH: neo4j/password
+      NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
+    networks:
+      - storage-network
+
+  # CouchDB (Document Database)
+  couchdb:
+    image: couchdb:3
+    container_name: couchdb
+    ports:
+      - "5984:5984"
+    volumes:
+      - couchdb_data:/opt/couchdb/data
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+    networks:
+      - storage-network
+
+  # File Browser (Web-based file manager)
+  filebrowser:
+    image: filebrowser/filebrowser
+    container_name: filebrowser
+    ports:
+      - "8080:80"
+    volumes:
+      - ./files:/srv
+      - filebrowser_data:/database.db
+    environment:
+      FB_BASEURL: /
+    networks:
+      - storage-network
+
+  # Backup service
+  backup:
+    image: alpine:latest
+    container_name: backup-service
+    volumes:
+      - minio_data:/backup/minio:ro
+      - mongo1_data:/backup/mongo1:ro
+      - influxdb_data:/backup/influxdb:ro
+      - neo4j_data:/backup/neo4j:ro
+      - couchdb_data:/backup/couchdb:ro
+      - ./backups:/backups
+    command: |
+      sh -c "
+        apk add --no-cache tar gzip
+        while true; do
+          echo 'Starting backup process...'
+          timestamp=$$(date +%Y%m%d_%H%M%S)
+          tar -czf /backups/full_backup_$$timestamp.tar.gz -C /backup .
+          find /backups -name 'full_backup_*.tar.gz' -mtime +30 -delete
+          echo 'Backup completed. Next backup in 6 hours...'
+          sleep 21600
+        done
+      "
+    networks:
+      - storage-network
+
+volumes:
+  minio_data:
+  mongo1_data:
+  mongo2_data:
+  mongo3_data:
+  clickhouse_data:
+  influxdb_data:
+  neo4j_data:
+  neo4j_logs:
+  couchdb_data:
+  filebrowser_data:
+
+networks:
+  storage-network:
+    driver: bridge

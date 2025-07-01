@@ -1,0 +1,78 @@
+version: "3.8"
+
+# Docker Compose Volume Examples
+
+services:
+  # Service with named volume
+  database:
+    image: postgres:15
+    container_name: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  # Service with bind mounts
+  web:
+    image: nginx:alpine
+    container_name: web
+    volumes:
+      - ./html:/usr/share/nginx/html:ro # Read-only bind mount
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./logs:/var/log/nginx # Read-write bind mount
+
+  # Service with tmpfs mount
+  cache:
+    image: redis:alpine
+    container_name: cache
+    tmpfs:
+      - /tmp
+      - /var/cache/redis:size=100M
+
+  # Service with multiple volume types
+  app:
+    image: node:alpine
+    container_name: app
+    volumes:
+      # Named volume for persistent data
+      - app_data:/app/data
+      # Bind mount for development
+      - ./src:/app/src:ro
+      # Anonymous volume for node_modules
+      - /app/node_modules
+      # Config file bind mount
+      - ./config.json:/app/config.json:ro
+
+  # Service using external volume
+  backup:
+    image: alpine:latest
+    container_name: backup
+    volumes:
+      - backup_data:/backup
+      - shared_data:/data:ro # Read-only access to shared data
+    command: tar -czf /backup/data-backup.tar.gz /data
+
+# Volume definitions
+volumes:
+  # Local named volume
+  postgres_data:
+    driver: local
+
+  # Named volume with driver options
+  app_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /host/path/to/data
+
+  # External volume (must exist)
+  backup_data:
+    external: true
+    name: my-backup-volume
+
+  # Shared volume between services
+  shared_data:
+    driver: local

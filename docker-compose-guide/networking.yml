@@ -1,0 +1,78 @@
+version: "3.8"
+
+# Docker Compose Networking Examples
+
+services:
+  # Frontend service - only on frontend network
+  frontend:
+    image: nginx:alpine
+    container_name: frontend
+    ports:
+      - "80:80"
+    networks:
+      - frontend
+
+  # API Gateway - bridge between frontend and backend
+  api-gateway:
+    image: node:alpine
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - frontend
+      - backend
+
+  # Backend service - only on backend network
+  backend:
+    image: node:alpine
+    container_name: backend
+    networks:
+      - backend
+
+  # Database - isolated on backend network only
+  database:
+    image: postgres:15
+    container_name: database
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    networks:
+      - backend
+
+  # Service with custom network configuration
+  service-with-aliases:
+    image: redis:alpine
+    container_name: redis
+    networks:
+      backend:
+        aliases:
+          - cache
+          - redis-server
+
+  # Service with static IP
+  static-ip-service:
+    image: nginx:alpine
+    container_name: static-nginx
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.100
+
+# Network definitions
+networks:
+  # Default bridge network
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+  # Custom bridge network
+  backend:
+    driver: bridge
+    internal: true # No external access
+
+  # External network (must exist)
+  external-net:
+    external: true
+    name: my-existing-network

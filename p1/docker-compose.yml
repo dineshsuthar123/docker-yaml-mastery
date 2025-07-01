@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    image: node:18
+    container_name: simple-node-app
+    volumes:
+      - ./app:/usr/src/app
+    working_dir: /usr/src/app
+    command: node index.js
+    ports:
+      - "3000:3000"
+    environment:
+      MONGO_URL: mongodb://mongodb:27017/mydb
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:

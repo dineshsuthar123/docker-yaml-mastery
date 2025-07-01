@@ -1,0 +1,43 @@
+# Docker Compose Configuration Examples
+
+# Environment-specific configuration
+development:
+  database:
+    host: localhost
+    port: 5432
+    name: myapp_dev
+    user: dev_user
+    password: dev_pass
+
+  redis:
+    host: localhost
+    port: 6379
+
+  logging:
+    level: debug
+    format: detailed
+
+production:
+  database:
+    host: ${DB_HOST}
+    port: ${DB_PORT}
+    name: ${DB_NAME}
+    user: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
+
+  logging:
+    level: info
+    format: json
+
+# Service configuration template
+service_template: &service_defaults
+  restart: unless-stopped
+  networks:
+    - app-network
+  environment:
+    NODE_ENV: ${NODE_ENV:-development}
+    LOG_LEVEL: ${LOG_LEVEL:-info}

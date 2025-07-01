@@ -1,0 +1,109 @@
+{
+    "name": "docker-yaml-mastery",
+    "version": "1.0.0",
+    "description": "The Complete Learning Platform for Modern Container Orchestration",
+    "main": "index.js",
+    "scripts": {
+        "start": "./scripts/start-learning-platform.sh",
+        "start:windows": "powershell -ExecutionPolicy Bypass -File scripts/deploy-demos.ps1",
+        "launcher": "launch.bat",
+        "test": "./scripts/test-all.sh",
+        "test:windows": "powershell -ExecutionPolicy Bypass -File scripts/test-all.ps1",
+        "test:quick": "./scripts/test-all.sh --quick",
+        "test:yaml": "./scripts/test-all.sh --yaml-only",
+        "test:docker": "./scripts/test-all.sh --docker-only",
+        "test:security": "./scripts/test-all.sh --security",
+        "lint": "yamllint -d relaxed . && hadolint **/Dockerfile*",
+        "lint:windows": "yamllint -d relaxed .",
+        "quiz": "node quizzes/quiz-runner.js",
+        "quiz:server": "node quizzes/quiz-server.js",
+        "quiz:project": "node quizzes/project-quiz.js",
+        "quiz:advanced": "node quizzes/advanced-quiz-system.js",
+        "assessment": "node quizzes/assessment-runner.js",
+        "progress": "node scripts/progress-tracker.js",
+        "leaderboard": "node scripts/leaderboard.js",
+        "challenges": "node scripts/weekly-challenges.js",
+        "validate": "node scripts/validate-all.js",
+        "validate:quiz": "node quizzes/validate-quiz.js",
+        "create:quiz": "node scripts/create-quiz.js",
+        "learning:start": "./scripts/start-learning-platform.sh --learning-mode",
+        "setup": "./scripts/setup-environment.sh",
+        "deploy:demos": "./scripts/deploy-demos.sh",
+        "deploy:demos:windows": "powershell -ExecutionPolicy Bypass -File scripts/deploy-demos.ps1",
+        "deploy:docker-playground": "powershell -ExecutionPolicy Bypass -File scripts/deploy-demos.ps1 -Provider docker-playground",
+        "deploy:render": "powershell -ExecutionPolicy Bypass -File scripts/deploy-demos.ps1 -Provider render",
+        "deploy:heroku": "powershell -ExecutionPolicy Bypass -File scripts/deploy-demos.ps1 -Provider heroku",
+        "k8s:convert": "kompose convert",
+        "k8s:validate": "kubectl apply --dry-run=client -f kubernetes/",
+        "security:scan": "trivy fs .",
+        "performance:test": "k6 run tests/performance/load-test.js",
+        "docs:build": "mkdocs build",
+        "docs:serve": "mkdocs serve",
+        "docs:open": "start README.md",
+        "demos:open": "start demos/index.html",
+        "badge:update": "node scripts/update-badges.js",
+        "clean": "./scripts/cleanup.sh",
+        "health:check": "./scripts/health-check.sh",
+        "project:start": "npm run project:list && set /p project=Enter project name: && cd %project% && docker-compose up -d",
+        "project:list": "dir /b p* 2>nul | findstr \"^p[0-9]\"",
+        "project:stop": "cd %project% && docker-compose down",
+        "flagship": "scripts/flagship-launcher.sh"
+    },
+    "keywords": [
+        "docker",
+        "yaml",
+        "kubernetes",
+        "docker-compose",
+        "containers",
+        "learning",
+        "tutorial",
+        "devops",
+        "ci-cd",
+        "microservices"
+    ],
+    "author": "Docker & YAML Mastery Team",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yourusername/docker-yaml-mastery.git"
+    },
+    "bugs": {
+        "url": "https://github.com/yourusername/docker-yaml-mastery/issues"
+    },
+    "homepage": "https://docker-yaml-mastery.com",
+    "dependencies": {
+        "express": "^4.18.2",
+        "socket.io": "^4.7.2",
+        "chalk": "^4.1.2",
+        "inquirer": "^8.2.5",
+        "ora": "^5.4.1",
+        "figlet": "^1.6.0",
+        "boxen": "^5.1.2",
+        "progress": "^2.0.3",
+        "table": "^6.8.1",
+        "yaml": "^2.3.2",
+        "js-yaml": "^4.1.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1",
+        "jest": "^29.6.2",
+        "supertest": "^6.3.3",
+        "eslint": "^8.45.0",
+        "prettier": "^3.0.0",
+        "@types/node": "^20.4.5"
+    },
+    "engines": {
+        "node": ">=16.0.0",
+        "npm": ">=8.0.0"
+    },
+    "contributors": [
+        {
+            "name": "Learning Community",
+            "url": "https://github.com/yourusername/docker-yaml-mastery/contributors"
+        }
+    ],
+    "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/docker-yaml-mastery"
+    }
+}

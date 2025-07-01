@@ -1,0 +1,44 @@
+version: '3.8'
+
+# Beginner version with guided comments and simplified configuration
+
+services:
+  # Django Web Application - Beginner Setup
+  web:
+    build: 
+      context: ./django-app
+      dockerfile: Dockerfile
+    container_name: django-web-beginner
+    ports:
+      - "8000:8000"  # Simple port mapping
+    volumes:
+      - ./django-app:/app  # Code hot-reload for development
+    environment:
+      # Simplified environment variables
+      - DEBUG=1  # Enable debug mode for learning
+      - SECRET_KEY=beginner-secret-key-not-for-production
+      - DATABASE_URL=sqlite:///db.sqlite3  # Use SQLite for simplicity
+    # No complex dependencies - starts immediately
+    networks:
+      - beginner-network
+
+  # Optional: Simple database browser
+  db-browser:
+    image: adminer
+    container_name: db-browser
+    ports:
+      - "8081:8080"  # Access database through web interface
+    networks:
+      - beginner-network
+
+# Simple network configuration
+networks:
+  beginner-network:
+    driver: bridge
+
+# Educational comments:
+# - This version uses SQLite instead of PostgreSQL for simplicity
+# - No Celery workers to reduce complexity
+# - Debug mode enabled for learning
+# - Includes database browser for exploration
+# - Single container focus for understanding basics

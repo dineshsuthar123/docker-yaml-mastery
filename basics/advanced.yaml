@@ -1,0 +1,49 @@
+# Advanced YAML Features
+
+# Complex data structures
+company:
+  name: "Tech Corp"
+  founded: 2010
+  employees:
+    - name: "Alice"
+      position: "Developer"
+      skills: [python, javascript, docker]
+    - name: "Bob"
+      position: "DevOps"
+      skills: [kubernetes, terraform, aws]
+
+# Anchors and aliases for reusability
+defaults: &defaults
+  image: node:18
+  restart: unless-stopped
+  networks:
+    - app-network
+
+# Using anchors
+web-app:
+  <<: *defaults
+  ports:
+    - "3000:3000"
+
+api-app:
+  <<: *defaults
+  ports:
+    - "4000:4000"
+
+# Multiple documents in one file (separated by ---)
+---
+document: 1
+type: "configuration"
+---
+document: 2
+type: "data"
+
+# Explicit types
+version: !!str 3.8
+port: !!int 3000
+enabled: !!bool true
+pi: !!float 3.14159
+
+# Null values
+database_password: ~
+cache_ttl: null

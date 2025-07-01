@@ -1,0 +1,10 @@
+-- Create multiple databases and users
+CREATE DATABASE strapi;
+CREATE DATABASE api;
+CREATE DATABASE hasura;
+CREATE USER strapi WITH PASSWORD 'strapi';
+CREATE USER api WITH PASSWORD 'apipass';
+CREATE USER hasura WITH PASSWORD 'hasura';
+GRANT ALL PRIVILEGES ON DATABASE strapi TO strapi;
+GRANT ALL PRIVILEGES ON DATABASE api TO api;
+GRANT ALL PRIVILEGES ON DATABASE hasura TO hasura;

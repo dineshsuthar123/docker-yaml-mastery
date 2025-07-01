@@ -1,0 +1,161 @@
+version: '3.8'
+
+services:
+  # Game Server (Node.js WebSocket)
+  game-server:
+    build: ./game-server
+    container_name: game-server
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - DB_URL=mongodb://mongo:27017/gamedb
+    depends_on:
+      - redis
+      - mongo
+    networks:
+      - gaming
+
+  # Matchmaking Service
+  matchmaking:
+    build: ./matchmaking
+    container_name: matchmaking
+    ports:
+      - "3002:3002"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - GAME_SERVER_URL=http://game-server:3001
+    depends_on:
+      - redis
+    networks:
+      - gaming
+
+  # Leaderboard API
+  leaderboard:
+    build: ./leaderboard
+    container_name: leaderboard
+    ports:
+      - "3003:3003"
+    environment:
+      - DB_URL=mongodb://mongo:27017/gamedb
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - gaming
+
+  # Chat Service
+  chat-service:
+    build: ./chat-service
+    container_name: chat-service
+    ports:
+      - "3004:3004"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DB_URL=mongodb://mongo:27017/gamedb
+    depends_on:
+      - redis
+      - mongo
+    networks:
+      - gaming
+
+  # Game Client (React)
+  game-client:
+    build: ./game-client
+    container_name: game-client
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_GAME_SERVER=ws://localhost:3001
+      - REACT_APP_API_URL=http://localhost:3003
+    volumes:
+      - ./game-client:/app
+      - /app/node_modules
+    networks:
+      - gaming
+
+  # Admin Dashboard
+  admin-dashboard:
+    build: ./admin-dashboard
+    container_name: admin-dashboard
+    ports:
+      - "3005:3005"
+    environment:
+      - DB_URL=mongodb://mongo:27017/gamedb
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - gaming
+
+  # MongoDB for game data
+  mongo:
+    image: mongo:6
+    container_name: game-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongo_data:/data/db
+      - ./init-game-db.js:/docker-entrypoint-initdb.d/init-game-db.js
+    networks:
+      - gaming
+
+  # Redis for real-time data and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: game-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - gaming
+
+  # Analytics Service
+  analytics:
+    build: ./analytics
+    container_name: game-analytics
+    ports:
+      - "3006:3006"
+    environment:
+      - DB_URL=mongodb://mongo:27017/gamedb
+      - CLICKHOUSE_URL=http://clickhouse:8123
+    depends_on:
+      - mongo
+      - clickhouse
+    networks:
+      - gaming
+
+  # ClickHouse for analytics
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    container_name: game-clickhouse
+    ports:
+      - "8123:8123"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - gaming
+
+  # Game Monitoring
+  monitoring:
+    image: prom/prometheus
+    container_name: game-monitoring
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - gaming
+
+volumes:
+  mongo_data:
+  redis_data:
+  clickhouse_data:
+
+networks:
+  gaming:
+    driver: bridge

@@ -1,0 +1,58 @@
+version: "3.8"
+
+# Basic Docker Compose Concepts
+
+services:
+  # Basic service definition
+  web:
+    image: nginx:alpine
+    container_name: my-web-server
+    ports:
+      - "8080:80" # host:container port mapping
+
+  # Service with custom build
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: my-app
+    ports:
+      - "3000:3000"
+
+  # Service with environment variables
+  database:
+    image: postgres:15
+    container_name: my-database
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  # Service with volumes
+  cache:
+    image: redis:alpine
+    container_name: my-cache
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+
+  # Service with command override
+  worker:
+    image: python:3.9
+    container_name: my-worker
+    command: python worker.py
+    working_dir: /app
+    volumes:
+      - ./app:/app
+
+# Named volumes
+volumes:
+  redis_data:
+    driver: local
+
+# Custom networks
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge

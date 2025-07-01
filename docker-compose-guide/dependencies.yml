@@ -1,0 +1,96 @@
+version: "3.8"
+
+# Service Dependencies Examples
+
+services:
+  # Database - no dependencies
+  database:
+    image: postgres:15
+    container_name: database
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d myapp"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Cache - no dependencies
+  cache:
+    image: redis:alpine
+    container_name: cache
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API - depends on database and cache
+  api:
+    image: node:alpine
+    container_name: api
+    depends_on:
+      database:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    environment:
+      DB_HOST: database
+      REDIS_HOST: cache
+
+  # Web frontend - depends on API
+  web:
+    image: nginx:alpine
+    container_name: web
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+
+  # Worker - depends on database and cache
+  worker:
+    image: python:3.9
+    container_name: worker
+    depends_on:
+      - database
+      - cache
+    environment:
+      DB_HOST: database
+      REDIS_HOST: cache
+
+  # Background job processor
+  job-processor:
+    image: node:alpine
+    container_name: job-processor
+    depends_on:
+      database:
+        condition: service_healthy
+      cache:
+        condition: service_started # Just wait for container to start
+    restart: unless-stopped
+
+  # Migration service - runs once and exits
+  migration:
+    image: node:alpine
+    container_name: migration
+    depends_on:
+      database:
+        condition: service_healthy
+    command: npm run migrate
+    restart: "no" # Don't restart after successful completion
+
+  # Monitoring - depends on all services
+  monitoring:
+    image: prom/prometheus
+    container_name: monitoring
+    depends_on:
+      - database
+      - cache
+      - api
+      - web
+      - worker
+    ports:
+      - "9090:9090"

@@ -1,0 +1,165 @@
+version: '3.8'
+
+services:
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - microservices
+
+  # User Service
+  user-service:
+    build: ./services/user-service
+    container_name: user-service
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_URL=mongodb://mongo:27017/users
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+    depends_on:
+      - mongo
+      - rabbitmq
+    networks:
+      - microservices
+
+  # Order Service
+  order-service:
+    build: ./services/order-service
+    container_name: order-service
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_URL=postgresql://postgres:password@postgres:5432/orders
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - microservices
+
+  # Notification Service
+  notification-service:
+    build: ./services/notification-service
+    container_name: notification-service
+    ports:
+      - "3003:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+      - EMAIL_SERVICE=smtp
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+    depends_on:
+      - rabbitmq
+      - mailhog
+    networks:
+      - microservices
+
+  # Payment Service
+  payment-service:
+    build: ./services/payment-service
+    container_name: payment-service
+    ports:
+      - "3004:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_URL=postgresql://postgres:password@postgres:5432/payments
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+      - STRIPE_SECRET_KEY=sk_test_fake_key
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - microservices
+
+  # API Gateway
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - USER_SERVICE_URL=http://user-service:3000
+      - ORDER_SERVICE_URL=http://order-service:3000
+      - PAYMENT_SERVICE_URL=http://payment-service:3000
+      - JWT_SECRET=your-secret-key
+    depends_on:
+      - user-service
+      - order-service
+      - payment-service
+    networks:
+      - microservices
+
+  # MongoDB for User Service
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - microservices
+
+  # PostgreSQL for Order and Payment Services
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: app
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+    networks:
+      - microservices
+
+  # MailHog for email testing
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - microservices
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+    networks:
+      - microservices
+
+volumes:
+  rabbitmq_data:
+  mongo_data:
+  postgres_data:
+
+networks:
+  microservices:
+    driver: bridge

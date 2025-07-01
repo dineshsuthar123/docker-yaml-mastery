@@ -1,0 +1,286 @@
+version: '3.8'
+
+# Production version with security, monitoring, and performance optimizations
+
+services:
+  # Django Web Application - Production Ready
+  web:
+    build: 
+      context: ./django-app
+      dockerfile: Dockerfile.prod  # Production Dockerfile
+    container_name: django-web-prod
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media
+    environment:
+      - DEBUG=0  # Disable debug in production
+      - SECRET_KEY=${SECRET_KEY}  # Use environment variable
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@db:5432/django_db
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - web-tier
+      - db-tier
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"  # Non-root user
+
+  # Celery Worker - Production Configuration
+  celery-worker:
+    build: 
+      context: ./django-app
+      dockerfile: Dockerfile.prod
+    container_name: celery-worker-prod
+    restart: unless-stopped
+    volumes:
+      - media_volume:/app/media
+    environment:
+      - DEBUG=0
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@db:5432/django_db
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379
+    depends_on:
+      - db
+      - redis
+    command: celery -A myproject worker --loglevel=info --concurrency=4
+    deploy:
+      replicas: 2  # Multiple workers for production
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - db-tier
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
+
+  # PostgreSQL Database - Production Hardened
+  db:
+    image: postgres:15-alpine
+    container_name: postgres-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: django_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./backup:/backup
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - db-tier
+    security_opt:
+      - no-new-privileges:true
+
+  # Redis - Production Configuration
+  redis:
+    image: redis:7-alpine
+    container_name: redis-prod
+    restart: unless-stopped
+    command: >
+      redis-server 
+      --requirepass ${REDIS_PASSWORD}
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+        reservations:
+          memory: 200M
+    networks:
+      - db-tier
+    security_opt:
+      - no-new-privileges:true
+
+  # Nginx - Production Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/ssl/certs:ro
+      - static_volume:/staticfiles:ro
+      - media_volume:/media:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - web
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    networks:
+      - web-tier
+    security_opt:
+      - no-new-privileges:true
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - monitoring
+      - web-tier
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SECURITY_COOKIE_SECURE: "true"
+      GF_SECURITY_STRICT_TRANSPORT_SECURITY: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - monitoring
+
+  # Log Aggregation - Fluentd
+  fluentd:
+    build: ./fluentd
+    container_name: fluentd
+    restart: unless-stopped
+    volumes:
+      - ./fluentd/conf:/fluentd/etc:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - monitoring
+
+  # Backup Service
+  backup:
+    image: postgres:15-alpine
+    container_name: backup-service
+    restart: "no"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:ro
+      - ./backup:/backup
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+    command: >
+      sh -c "
+        pg_dump -h db -U postgres -d django_db > /backup/django_db_$$(date +%Y%m%d_%H%M%S).sql &&
+        find /backup -name '*.sql' -mtime +7 -delete
+      "
+    depends_on:
+      - db
+    networks:
+      - db-tier
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/postgres
+  redis_data:
+    driver: local
+  static_volume:
+    driver: local
+  media_volume:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  web-tier:
+    driver: bridge
+    internal: false
+  db-tier:
+    driver: bridge
+    internal: true  # Database network isolated from external access
+  monitoring:
+    driver: bridge
+
+# Production deployment notes:
+# 1. Set all environment variables in .env file
+# 2. Configure SSL certificates in nginx/ssl/
+# 3. Set up external volume mounts for data persistence
+# 4. Configure backup retention and monitoring alerts
+# 5. Implement log rotation and monitoring
+# 6. Use secrets management for sensitive data

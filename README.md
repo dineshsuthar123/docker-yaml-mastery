@@ -3,10 +3,10 @@
 # 🐳 Docker & YAML Mastery
 ## The Ultimate Learning Platform for Modern Container Orchestration
 
-[![CI/CD Pipeline](https://img.shields.io/github/actions/workflow/status/yourusername/docker-yaml-mastery/ci.yml?branch=main&label=CI%2FCD&logo=github&style=for-the-badge)](https://github.com/yourusername/docker-yaml-mastery/actions)
-[![Security Scan](https://img.shields.io/badge/Security-Validated-green?style=for-the-badge&logo=shield)](https://github.com/yourusername/docker-yaml-mastery/security)
+[![CI/CD Pipeline](https://img.shields.io/github/actions/workflow/status/dineshsuthar123/docker-yaml-mastery/ci.yml?branch=main&label=CI%2FCD&logo=github&style=for-the-badge)](https://github.com/dineshsuthar123/docker-yaml-mastery/actions)
+[![Security Scan](https://img.shields.io/badge/Security-Validated-green?style=for-the-badge&logo=shield)](https://github.com/dineshsuthar123/docker-yaml-mastery/security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-brightgreen?style=for-the-badge&logo=docker)](https://github.com/yourusername/docker-yaml-mastery)
+[![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-brightgreen?style=for-the-badge&logo=docker)](https://github.com/dineshsuthar123/docker-yaml-mastery)
 
 ### 🚀 From Zero to Production Hero
 *The most comprehensive Docker & YAML learning experience with 15 hands-on projects*
@@ -62,7 +62,7 @@
 #### Windows PowerShell
 ```powershell
 # Clone and start learning
-git clone https://github.com/yourusername/docker-yaml-mastery.git
+git clone https://github.com/dineshsuthar123/docker-yaml-mastery.git
 cd docker-yaml-mastery
 docker-compose up -d
 ```
@@ -70,7 +70,7 @@ docker-compose up -d
 #### macOS/Linux
 ```bash
 # Quick setup
-git clone https://github.com/yourusername/docker-yaml-mastery.git
+git clone https://github.com/dineshsuthar123/docker-yaml-mastery.git
 cd docker-yaml-mastery
 docker-compose up -d
 ```
@@ -211,9 +211,9 @@ docker system prune -a
 
 <div align="center">
 
-[![GitHub Issues](https://img.shields.io/badge/🐛-Report%20Issues-red?style=for-the-badge)](https://github.com/yourusername/docker-yaml-mastery/issues)
-[![GitHub Discussions](https://img.shields.io/badge/💬-Join%20Discussion-181717?style=for-the-badge&logo=github)](https://github.com/yourusername/docker-yaml-mastery/discussions)
-[![Contribute](https://img.shields.io/badge/🤝-Contribute-brightgreen?style=for-the-badge)](https://github.com/yourusername/docker-yaml-mastery/contribute)
+[![GitHub Issues](https://img.shields.io/badge/🐛-Report%20Issues-red?style=for-the-badge)](https://github.com/dineshsuthar123/docker-yaml-mastery/issues)
+[![GitHub Discussions](https://img.shields.io/badge/💬-Join%20Discussion-181717?style=for-the-badge&logo=github)](https://github.com/dineshsuthar123/docker-yaml-mastery/discussions)
+[![Contribute](https://img.shields.io/badge/🤝-Contribute-brightgreen?style=for-the-badge)](https://github.com/dineshsuthar123/docker-yaml-mastery/contribute)
 
 </div>
 
